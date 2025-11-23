@@ -1,18 +1,11 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
 
+#include "engine/order_router.hpp"
 #include "parser/order_parser.hpp"
 
-void repl(std::istream& input, bool interactive) {
-
-    if (interactive) {
-        std::cout << "Enter orders: LIMIT <SYMBOL> <BUY|SELL> <PRICE> <QTY> or MARKET <SYMBOL> <BUY|SELL> <QTY>\n";
-        std::cout << "> ";
-    } else {
-        std::cout << "Reading from file." << std::endl;
-    }
-
+void repl(std::istream& input, OrderRouter& router, bool interactive) {
     std::string line;
     while (std::getline(input, line)) {
         if (line.empty() || line[0] == '#') {
@@ -22,25 +15,34 @@ void repl(std::istream& input, bool interactive) {
 
         auto parsed = parse_line(line);
         if (!parsed.order) {
-            std::cout << "Parse error: " << parsed.error << "\n> ";
+            std::cout << "Parse error: " << parsed.error << "\n";
             if (interactive) std::cout << "> ";
             continue;
         }
 
         const auto& order = *parsed.order;
-        std::cout << "Parsed order -> type=" << (order.type == OrderType::Limit ? "LIMIT" : "MARKET")
+        auto trades = router.submit(order);
+
+        std::cout << "Accepted order -> type=" << (order.type == OrderType::Limit ? "LIMIT" : "MARKET")
                   << " side=" << (order.side == Side::Buy ? "BUY" : "SELL")
                   << " symbol=" << order.symbol
                   << " qty=" << order.quantity;
-        if (order.type == OrderType::Limit) {
-            std::cout << " price=" << order.price;
+        if (order.type == OrderType::Limit) std::cout << " price=" << order.price;
+        std::cout << "\n";
+
+        if (!trades.empty()) {
+            for (const auto& t : trades) {
+                std::cout << "TRADE " << t.symbol << " price=" << t.price << " qty=" << t.quantity
+                         << "\n";
+            }
         }
-        std::cout << "\n> ";
         if (interactive) std::cout << "> ";
     }
 }
 
 int main(int argc, char* argv[]) {
+    OrderRouter router;
+
     if (argc > 1) {
         std::ifstream file(argv[1]);
         if (!file.is_open()) {
@@ -48,10 +50,13 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         // text file mode - non interactive mode.
-        repl(file, false);
+        std::cout << "Reading from file.\n";
+        repl(file, router, false);
     } else {
         // interactive mode.
-        repl(std::cin, true);
+        std::cout << "Enter orders: LIMIT <SYMBOL> <BUY|SELL> <PRICE> <QTY> or MARKET <SYMBOL> <BUY|SELL> <QTY>\n";
+        std::cout << "> ";
+        repl(std::cin, router, true);
     }
     return 0;
 }
