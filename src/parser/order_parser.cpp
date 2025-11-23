@@ -23,7 +23,7 @@ ParseResult parse_line(const std::string& line) {
     }
 
     OrderInput order{};
-    order.symbol = symbol;
+    order.symbol = to_upper(symbol);
 
     type_str = to_upper(type_str);
     side_str = to_upper(side_str);

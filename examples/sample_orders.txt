@@ -1,0 +1,28 @@
+# Sample order file for the orderbook application
+# Lines starting with # are comments and will be ignored.
+
+# --- Basic LIMIT orders ---
+LIMIT AAPL BUY 185.50 100
+LIMIT AAPL SELL 186.00 50
+LIMIT TSLA BUY 230.25 10
+
+# --- Basic MARKET orders ---
+MARKET AAPL BUY 25
+MARKET TSLA SELL 5
+
+# --- Mixed orders for testing matching ---
+LIMIT GOOG BUY 135.00 20
+LIMIT GOOG SELL 134.50 10
+MARKET GOOG BUY 5
+
+# --- Edge cases the parser must handle ---
+# symbol lowercase should still work (depending on your requirements)
+LIMIT msft buy 350.25 75
+MARKET msft SELL 10
+
+# --- Very large qty ---
+LIMIT AMZN BUY 3200.75 10000
+
+# Blank lines are allowed:
+
+# End of file
